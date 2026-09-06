@@ -27,12 +27,16 @@
             android:layout_weight="1" />
     </LinearLayout>
 
-    <View
-        android:id="@+id/dangerOverlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="#B30000"
-        android:alpha="0" />
+    <!-- Small red glow that appears on the screen edge, in the direction the
+         stalker is coming from, instead of tinting the whole screen red. -->
+    <ImageView
+        android:id="@+id/dangerGlow"
+        android:layout_width="140dp"
+        android:layout_height="140dp"
+        android:layout_gravity="top|start"
+        android:src="@drawable/danger_glow"
+        android:alpha="0"
+        android:elevation="6dp" />
 
     <TextView
         android:id="@+id/keysText"
@@ -97,40 +101,67 @@
         android:elevation="4dp" />
 
     <!-- ===================== MENU ===================== -->
-    <LinearLayout
+    <FrameLayout
         android:id="@+id/menuOverlay"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:gravity="center"
-        android:background="#EE050403"
-        android:padding="32dp">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="The Hollow House"
-            android:textColor="#D8CFB8"
-            android:textSize="28sp"
-            android:layout_marginBottom="14dp" />
+        <!-- Full-bleed menu background. Replace this file with your own art:
+             app/src/main/res/drawable/menu_background.png (keep the same
+             base name "menu_background" — jpg/png/webp all work, just don't
+             leave two files with that same name at once). -->
+        <ImageView
+            android:id="@+id/menuBackground"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            android:src="@drawable/menu_background" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center"
-            android:text="Something else lives here now. Find the five brass keys and reach the front door before it finds you.\n\nLeft side: move · Right side: look\nHold Sneak to stay quiet · Hold Run to move fast and loud"
-            android:textColor="#B0A88F"
-            android:textSize="14sp"
-            android:layout_marginBottom="24dp" />
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#B3050403" />
 
         <Button
             android:id="@+id/startBtn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_gravity="top|center_horizontal"
+            android:layout_marginTop="36dp"
             android:text="Step Inside"
             android:textColor="#D8CFB8"
-            android:background="#332A2118" />
-    </LinearLayout>
+            android:background="#CC2A2118"
+            android:elevation="4dp" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:orientation="vertical"
+            android:gravity="center"
+            android:padding="32dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="The Hollow House"
+                android:textColor="#D8CFB8"
+                android:textSize="28sp"
+                android:shadowColor="#000000"
+                android:shadowDx="0" android:shadowDy="2" android:shadowRadius="6"
+                android:layout_marginBottom="14dp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="Something else lives here now. Find the five brass keys and reach the front door before it finds you.\n\nLeft side: move · Right side: look\nHold Sneak to stay quiet · Hold Run to move fast and loud"
+                android:textColor="#D8CFB8"
+                android:textSize="14sp"
+                android:shadowColor="#000000"
+                android:shadowDx="0" android:shadowDy="1" android:shadowRadius="4" />
+        </LinearLayout>
+    </FrameLayout>
 
     <!-- ===================== LOSE ===================== -->
     <LinearLayout
