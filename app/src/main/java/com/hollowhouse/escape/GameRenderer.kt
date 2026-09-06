@@ -51,6 +51,7 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
     private val walls = ArrayList<Box>()
 
     companion object {
+        private val ZERO_EMISSIVE = floatArrayOf(0f, 0f, 0f)
         val KEY_POSITIONS = arrayOf(
             floatArrayOf(-8.5f, -8.2f), floatArrayOf(8.5f, -8.2f),
             floatArrayOf(-8.5f, 8.2f), floatArrayOf(8.5f, 8.2f),
@@ -87,11 +88,21 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
     // ---------------- GL objects ----------------
     private var program = 0
     private var uMVPLoc = 0
+    private var uModelLoc = 0
     private var uColorLoc = 0
+    private var uEmissiveLoc = 0
     private var uLightDirLoc = 0
+    private var uTorchPosLoc = 0
+    private var uTorchDirLoc = 0
+    private var uCutOffLoc = 0
+    private var uOuterCutOffLoc = 0
     private var aPositionLoc = 0
     private var aNormalLoc = 0
     private var vbo = 0
+
+    // flashlight cone: inner angle stays fully bright, outer angle is the soft edge
+    private val torchCutOff = cos(Math.toRadians(17.0)).toFloat()
+    private val torchOuterCutOff = cos(Math.toRadians(32.0)).toFloat()
 
     private val projMatrix = FloatArray(16)
     private val viewMatrix = FloatArray(16)
@@ -234,7 +245,7 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
         val stickDX = moveStick?.dx ?: 0f
         val stickDY = moveStick?.dy ?: 0f
         val fwd = -stickDY   // pushing the stick up moves forward
-        val strafe = stickDX
+        val strafe = -stickDX // pushing the stick right must move the player right
 
         val speed = if (sneaking) 1.3f else if (running) 4.6f else 2.6f
         val moving = abs(fwd) > 0.02f || abs(strafe) > 0.02f
@@ -359,22 +370,51 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
             attribute vec4 aPosition;
             attribute vec3 aNormal;
             uniform mat4 uMVP;
+            uniform mat4 uModel;
             varying vec3 vNormal;
+            varying vec3 vWorldPos;
             void main() {
                 gl_Position = uMVP * aPosition;
-                vNormal = aNormal;
+                vWorldPos = (uModel * aPosition).xyz;
+                vNormal = mat3(uModel) * aNormal;
             }
         """.trimIndent()
 
+        // The room itself is almost black (a very thin top-down fill so shapes
+        // don't vanish into pure silhouette). The player's held torch is a real
+        // spotlight cone in world space: whatever it points at gets bright,
+        // everything else stays dark. uEmissive adds self-glow on top (used for
+        // the stalker's flickering candle light) regardless of the torch.
         val fragmentShaderSrc = """
             precision mediump float;
             varying vec3 vNormal;
+            varying vec3 vWorldPos;
             uniform vec4 uColor;
+            uniform vec3 uEmissive;
             uniform vec3 uLightDir;
+            uniform vec3 uTorchPos;
+            uniform vec3 uTorchDir;
+            uniform float uCutOff;
+            uniform float uOuterCutOff;
             void main() {
-                float diff = max(dot(normalize(vNormal), normalize(uLightDir)), 0.0);
-                float ambient = 0.4;
-                vec3 col = uColor.rgb * (ambient + diff * 0.6);
+                vec3 N = normalize(vNormal);
+
+                float fill = max(dot(N, normalize(uLightDir)), 0.0);
+                float ambient = 0.045;
+                vec3 base = uColor.rgb * (ambient + fill * 0.05);
+
+                vec3 toFrag = vWorldPos - uTorchPos;
+                float dist = length(toFrag);
+                vec3 toFragN = toFrag / max(dist, 0.001);
+                float theta = dot(toFragN, normalize(uTorchDir));
+                float epsilon = max(uCutOff - uOuterCutOff, 0.0001);
+                float coneAtten = clamp((theta - uOuterCutOff) / epsilon, 0.0, 1.0);
+                float distAtten = 1.0 / (1.0 + 0.05 * dist + 0.02 * dist * dist);
+                float nDotL = max(dot(N, -toFragN), 0.0);
+                vec3 torchColor = vec3(1.0, 0.93, 0.78);
+                vec3 torch = uColor.rgb * torchColor * nDotL * coneAtten * distAtten * 2.8;
+
+                vec3 col = base + torch + uEmissive;
                 gl_FragColor = vec4(col, uColor.a);
             }
         """.trimIndent()
@@ -389,8 +429,14 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
         aPositionLoc = GLES20.glGetAttribLocation(program, "aPosition")
         aNormalLoc = GLES20.glGetAttribLocation(program, "aNormal")
         uMVPLoc = GLES20.glGetUniformLocation(program, "uMVP")
+        uModelLoc = GLES20.glGetUniformLocation(program, "uModel")
         uColorLoc = GLES20.glGetUniformLocation(program, "uColor")
+        uEmissiveLoc = GLES20.glGetUniformLocation(program, "uEmissive")
         uLightDirLoc = GLES20.glGetUniformLocation(program, "uLightDir")
+        uTorchPosLoc = GLES20.glGetUniformLocation(program, "uTorchPos")
+        uTorchDirLoc = GLES20.glGetUniformLocation(program, "uTorchDir")
+        uCutOffLoc = GLES20.glGetUniformLocation(program, "uCutOff")
+        uOuterCutOffLoc = GLES20.glGetUniformLocation(program, "uOuterCutOff")
 
         val bb = ByteBuffer.allocateDirect(CubeMesh.vertexData.size * 4).order(ByteOrder.nativeOrder())
         val fb: FloatBuffer = bb.asFloatBuffer().apply { put(CubeMesh.vertexData); position(0) }
@@ -461,6 +507,12 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glVertexAttribPointer(aNormalLoc, 3, GLES20.GL_FLOAT, false, 24, 12)
         GLES20.glUniform3f(uLightDirLoc, 0.3f, 1f, 0.25f)
 
+        // the flashlight lives at the player's eye and always points where they look
+        GLES20.glUniform3f(uTorchPosLoc, playerX, EYE_Y, playerZ)
+        GLES20.glUniform3f(uTorchDirLoc, dirX, dirY, dirZ)
+        GLES20.glUniform1f(uCutOffLoc, torchCutOff)
+        GLES20.glUniform1f(uOuterCutOffLoc, torchOuterCutOff)
+
         // floor & ceiling
         drawBox(0f, -0.05f, 0f, HX * 2, 0.1f, HZ * 2, 0.11f, 0.09f, 0.07f)
         drawBox(0f, WALL_H + 0.05f, 0f, HX * 2, 0.1f, HZ * 2, 0.05f, 0.04f, 0.03f)
@@ -471,42 +523,47 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
             drawBox(cx, WALL_H / 2f, cz, b.maxX - b.minX, WALL_H, b.maxZ - b.minZ, b.r, b.g, b.b)
         }
 
-        // door
+        // door — once unlocked it glows faintly on its own so it reads as the exit even unlit
         val doorColor = if (doorUnlocked) floatArrayOf(0.22f, 0.42f, 0.2f) else floatArrayOf(0.36f, 0.17f, 0.12f)
-        drawBox(0f, 1.3f, HZ - 0.1f, 2.4f, 2.6f, 0.25f, doorColor[0], doorColor[1], doorColor[2], minBrightness = 0.3f)
+        val doorGlow = if (doorUnlocked) floatArrayOf(0.05f, 0.13f, 0.05f) else floatArrayOf(0f, 0f, 0f)
+        drawBox(0f, 1.3f, HZ - 0.1f, 2.4f, 2.6f, 0.25f, doorColor[0], doorColor[1], doorColor[2],
+            emissive = doorGlow)
 
         // keys
         for (i in KEY_POSITIONS.indices) {
             if (!keyVisible[i]) continue
             val kx = KEY_POSITIONS[i][0]; val kz = KEY_POSITIONS[i][1]
             val bob = 1.1f + sin(worldTime * 2f + i) * 0.08f
-            drawBox(kx, bob, kz, 0.24f, 0.42f, 0.24f, 0.91f, 0.72f, 0.29f,
-                minBrightness = 0.35f, rotY = worldTime * 1.6f + i)
+            drawBox(kx, bob, kz, 0.24f, 0.42f, 0.24f, 0.91f, 0.72f, 0.29f, rotY = worldTime * 1.6f + i)
         }
 
-        // stalker
-        val nearFactor = max(0.22f, dangerIntensity)
-        drawBox(stalkerX, 0.6f, stalkerZ, 0.5f, 1.15f, 0.5f, 0.06f, 0.05f, 0.05f, minBrightness = nearFactor * 0.3f)
-        drawBox(stalkerX, 1.55f, stalkerZ, 0.4f, 0.4f, 0.4f, 0.06f, 0.05f, 0.05f, minBrightness = nearFactor * 0.3f)
-        if (stalkerState == "chase") {
-            drawBox(stalkerX, 1.6f, stalkerZ - 0.2f, 0.14f, 0.06f, 0.06f, 0.6f, 0.02f, 0.02f, minBrightness = 0.6f)
-        }
+        // stalker — carries its own restless candle-flame light so it is never fully
+        // invisible in the dark, flickering harder and glowing brighter the closer it gets
+        val distToPlayer = hypot((stalkerX - playerX).toDouble(), (stalkerZ - playerZ).toDouble()).toFloat()
+        val flicker = (0.55f + 0.25f * sin(worldTime * 16f) + 0.15f * sin(worldTime * 6.1f + 1.3f) +
+            0.12f * sin(worldTime * 23f + 0.7f)).coerceIn(0.22f, 1f)
+        val proximityGlow = (1.3f - distToPlayer * 0.055f).coerceIn(0.12f, 1f)
+        val candle = flicker * proximityGlow
+        val candleBody = floatArrayOf(0.85f * candle * 0.4f, 0.42f * candle * 0.4f, 0.12f * candle * 0.4f)
+        val candleFlame = floatArrayOf(1f * candle, 0.55f * candle, 0.16f * candle)
+
+        drawBox(stalkerX, 0.6f, stalkerZ, 0.5f, 1.15f, 0.5f, 0.06f, 0.05f, 0.05f, emissive = candleBody)
+        drawBox(stalkerX, 1.55f, stalkerZ, 0.4f, 0.4f, 0.4f, 0.06f, 0.05f, 0.05f, emissive = candleBody)
+        drawBox(stalkerX, 1.55f, stalkerZ - 0.28f, 0.11f, 0.16f, 0.11f, 1f, 0.6f, 0.2f, emissive = candleFlame)
     }
 
     private fun drawBox(cx: Float, cy: Float, cz: Float, w: Float, h: Float, d: Float,
-                         r: Float, g: Float, b: Float, minBrightness: Float = 0.12f, rotY: Float = 0f) {
+                         r: Float, g: Float, b: Float, emissive: FloatArray = ZERO_EMISSIVE, rotY: Float = 0f) {
         Matrix.setIdentityM(modelMatrix, 0)
         Matrix.translateM(modelMatrix, 0, cx, cy, cz)
         if (rotY != 0f) Matrix.rotateM(modelMatrix, 0, Math.toDegrees(rotY.toDouble()).toFloat(), 0f, 1f, 0f)
         Matrix.scaleM(modelMatrix, 0, w, h, d)
         Matrix.multiplyMM(mvpMatrix, 0, vpMatrix, 0, modelMatrix, 0)
 
-        val ddx = cx - playerX; val ddy = cy - EYE_Y; val ddz = cz - playerZ
-        val dist = sqrt(ddx * ddx + ddy * ddy + ddz * ddz)
-        val falloff = max(minBrightness, min(1f, 1f - dist / 13f))
-
         GLES20.glUniformMatrix4fv(uMVPLoc, 1, false, mvpMatrix, 0)
-        GLES20.glUniform4f(uColorLoc, r * falloff, g * falloff, b * falloff, 1f)
+        GLES20.glUniformMatrix4fv(uModelLoc, 1, false, modelMatrix, 0)
+        GLES20.glUniform4f(uColorLoc, r, g, b, 1f)
+        GLES20.glUniform3f(uEmissiveLoc, emissive[0], emissive[1], emissive[2])
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, CubeMesh.VERTEX_COUNT)
     }
 }

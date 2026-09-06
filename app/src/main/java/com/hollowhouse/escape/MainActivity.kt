@@ -1,9 +1,12 @@
 package com.hollowhouse.escape
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
 import android.widget.LinearLayout
@@ -22,6 +25,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var menuOverlay: LinearLayout
     private lateinit var loseOverlay: LinearLayout
     private lateinit var winOverlay: LinearLayout
+    private lateinit var loaderOverlay: LinearLayout
     private lateinit var muteBtn: Button
 
     private val handler = Handler(Looper.getMainLooper())
@@ -46,6 +50,7 @@ class MainActivity : AppCompatActivity() {
         menuOverlay = findViewById(R.id.menuOverlay)
         loseOverlay = findViewById(R.id.loseOverlay)
         winOverlay = findViewById(R.id.winOverlay)
+        loaderOverlay = findViewById(R.id.loaderOverlay)
         muteBtn = findViewById(R.id.muteBtn)
 
         findViewById<Button>(R.id.startBtn).setOnClickListener {
@@ -66,6 +71,19 @@ class MainActivity : AppCompatActivity() {
         attachHoldButton(findViewById(R.id.runBtn)) { renderer.running = it }
 
         handler.post(pollRunnable)
+
+        // Show the loader/splash briefly while the scene warms up, then fade it away.
+        handler.postDelayed({
+            loaderOverlay.animate()
+                .alpha(0f)
+                .setDuration(420)
+                .setListener(object : AnimatorListenerAdapter() {
+                    override fun onAnimationEnd(animation: Animator) {
+                        loaderOverlay.visibility = View.GONE
+                    }
+                })
+                .start()
+        }, 1600)
     }
 
     private fun attachHoldButton(button: Button, onPressed: (Boolean) -> Unit) {
