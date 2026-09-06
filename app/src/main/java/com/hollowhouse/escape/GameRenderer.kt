@@ -12,6 +12,7 @@ import java.nio.FloatBuffer
 import javax.microedition.khronos.egl.EGLConfig
 import javax.microedition.khronos.opengles.GL10
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.max
@@ -36,6 +37,10 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
     @Volatile var gameState = "menu" // menu | playing | won | lost
     @Volatile var stateLabel = "Still"
     @Volatile var dangerIntensity = 0f
+    // bearing of the stalker relative to where the player is looking: 0 = straight
+    // ahead, positive = to the right, negative = to the left (radians, -PI..PI)
+    @Volatile var dangerBearing = 0f
+    @Volatile var stalkerDistance = 999f
 
     // ---------------- world constants ----------------
     private val HX = 14f
@@ -512,6 +517,17 @@ class GameRenderer(private val context: Context) : GLSurfaceView.Renderer {
         GLES20.glUniform3f(uTorchDirLoc, dirX, dirY, dirZ)
         GLES20.glUniform1f(uCutOffLoc, torchCutOff)
         GLES20.glUniform1f(uOuterCutOffLoc, torchOuterCutOff)
+
+        // bearing + distance to the stalker, for the footstep/growl audio and the
+        // directional danger glow on screen (kept up to date every frame)
+        run {
+            val sinYaw = sin(yaw); val cosYaw = cos(yaw)
+            val tx = stalkerX - playerX; val tz = stalkerZ - playerZ
+            val fwdComp = tx * sinYaw + tz * cosYaw
+            val rightComp = -tx * cosYaw + tz * sinYaw
+            dangerBearing = atan2(rightComp, fwdComp)
+            stalkerDistance = hypot(tx.toDouble(), tz.toDouble()).toFloat()
+        }
 
         // floor & ceiling
         drawBox(0f, -0.05f, 0f, HX * 2, 0.1f, HZ * 2, 0.11f, 0.09f, 0.07f)
