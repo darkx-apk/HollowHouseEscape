@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#000000">
+
+    <com.hollowhouse.escape.GameView
+        android:id="@+id/gameView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="horizontal">
+
+        <com.hollowhouse.escape.TouchStick
+            android:id="@+id/moveStick"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <com.hollowhouse.escape.LookPad
+            android:id="@+id/lookPad"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+    </LinearLayout>
+
+    <View
+        android:id="@+id/dangerOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#B30000"
+        android:alpha="0" />
+
+    <TextView
+        android:id="@+id/keysText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="16dp"
+        android:text="Keys: 0/5"
+        android:textColor="#D8CFB8"
+        android:textSize="16sp"
+        android:shadowColor="#000000"
+        android:shadowDx="0" android:shadowDy="2" android:shadowRadius="4" />
+
+    <TextView
+        android:id="@+id/stateText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|end"
+        android:layout_margin="16dp"
+        android:text="Still"
+        android:textColor="#B0A88F"
+        android:textSize="13sp"
+        android:shadowColor="#000000"
+        android:shadowDx="0" android:shadowDy="2" android:shadowRadius="4" />
+
+    <Button
+        android:id="@+id/sneakBtn"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="180dp"
+        android:layout_marginBottom="20dp"
+        android:text="Sneak"
+        android:textSize="11sp"
+        android:textColor="#D8CFB8"
+        android:background="#661A1712"
+        android:elevation="4dp" />
+
+    <Button
+        android:id="@+id/runBtn"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="88dp"
+        android:layout_marginBottom="20dp"
+        android:text="Run"
+        android:textSize="11sp"
+        android:textColor="#D8CFB8"
+        android:background="#661A1712"
+        android:elevation="4dp" />
+
+    <Button
+        android:id="@+id/muteBtn"
+        android:layout_width="52dp"
+        android:layout_height="52dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="34dp"
+        android:text="🔊"
+        android:textSize="16sp"
+        android:background="#661A1712"
+        android:elevation="4dp" />
+
+    <!-- ===================== MENU ===================== -->
+    <LinearLayout
+        android:id="@+id/menuOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#EE050403"
+        android:padding="32dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="The Hollow House"
+            android:textColor="#D8CFB8"
+            android:textSize="28sp"
+            android:layout_marginBottom="14dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:text="Something else lives here now. Find the five brass keys and reach the front door before it finds you.\n\nLeft side: move · Right side: look\nHold Sneak to stay quiet · Hold Run to move fast and loud"
+            android:textColor="#B0A88F"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/startBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Step Inside"
+            android:textColor="#D8CFB8"
+            android:background="#332A2118" />
+    </LinearLayout>
+
+    <!-- ===================== LOSE ===================== -->
+    <LinearLayout
+        android:id="@+id/loseOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#EE050403"
+        android:visibility="gone"
+        android:padding="32dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Caught"
+            android:textColor="#8A2C1F"
+            android:textSize="30sp"
+            android:layout_marginBottom="14dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="It found you in the dark."
+            android:textColor="#B0A88F"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/retryLoseBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Try Again"
+            android:textColor="#D8CFB8"
+            android:background="#332A2118" />
+    </LinearLayout>
+
+    <!-- ===================== WIN ===================== -->
+    <LinearLayout
+        android:id="@+id/winOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:background="#EE050403"
+        android:visibility="gone"
+        android:padding="32dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="You Escaped"
+            android:textColor="#E8B84B"
+            android:textSize="30sp"
+            android:layout_marginBottom="14dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="The door swings shut behind you."
+            android:textColor="#B0A88F"
+            android:textSize="14sp"
+            android:layout_marginBottom="24dp" />
+
+        <Button
+            android:id="@+id/retryWinBtn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Play Again"
+            android:textColor="#D8CFB8"
+            android:background="#332A2118" />
+    </LinearLayout>
+
+</FrameLayout>
