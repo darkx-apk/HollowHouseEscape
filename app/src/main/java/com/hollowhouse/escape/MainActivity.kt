@@ -157,8 +157,8 @@ class MainActivity : AppCompatActivity() {
                 soundManager.setRunningFootsteps(false)
                 soundManager.updateGrannySound(999f)
                 dangerGlow.alpha = 0f
-                interactBtn.visibility = View.GONE
-                interactHint.visibility = View.GONE
+                interactBtn.visibility = View.INVISIBLE
+                interactHint.visibility = View.INVISIBLE
             }
 
             handler.postDelayed(this, 80)
@@ -171,8 +171,8 @@ class MainActivity : AppCompatActivity() {
      */
     private fun updateInteractPrompt() {
         if (!renderer.canInteract || !renderer.promptOnScreen) {
-            interactBtn.visibility = View.GONE
-            interactHint.visibility = View.GONE
+            interactBtn.visibility = View.INVISIBLE
+            interactHint.visibility = View.INVISIBLE
             return
         }
         val w = rootView.width.toFloat()
