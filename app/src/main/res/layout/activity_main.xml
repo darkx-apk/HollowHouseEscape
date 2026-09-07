@@ -62,6 +62,61 @@
         android:shadowColor="#000000"
         android:shadowDx="0" android:shadowDy="2" android:shadowRadius="4" />
 
+    <TextView
+        android:id="@+id/floorText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="16dp"
+        android:text="Ground Floor"
+        android:textColor="#B0A88F"
+        android:textSize="12sp"
+        android:letterSpacing="0.15"
+        android:shadowColor="#000000"
+        android:shadowDx="0" android:shadowDy="2" android:shadowRadius="4" />
+
+    <!-- Floating hand icon: appears over whichever door you're facing.
+         Tap to open/close it, or to feed a held key into the front door. -->
+    <Button
+        android:id="@+id/interactBtn"
+        android:layout_width="58dp"
+        android:layout_height="58dp"
+        android:layout_gravity="top|start"
+        android:text="🤚"
+        android:textSize="24sp"
+        android:background="#772A2118"
+        android:visibility="gone"
+        android:elevation="8dp" />
+
+    <TextView
+        android:id="@+id/interactHint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:text=""
+        android:textColor="#EFE6CE"
+        android:textSize="12sp"
+        android:background="#992A2118"
+        android:paddingStart="8dp" android:paddingEnd="8dp"
+        android:paddingTop="3dp" android:paddingBottom="3dp"
+        android:visibility="gone"
+        android:elevation="8dp" />
+
+    <!-- Crouch toggle: press to crouch and slip under a bed/desk hide spot,
+         press again to stand up. -->
+    <Button
+        android:id="@+id/hideBtn"
+        android:layout_width="76dp"
+        android:layout_height="76dp"
+        android:layout_gravity="bottom|start"
+        android:layout_marginStart="20dp"
+        android:layout_marginBottom="20dp"
+        android:text="Hide"
+        android:textSize="12sp"
+        android:textColor="#D8CFB8"
+        android:background="#661A1712"
+        android:elevation="4dp" />
+
     <Button
         android:id="@+id/sneakBtn"
         android:layout_width="76dp"
@@ -155,7 +210,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="Something else lives here now. Find the five brass keys and reach the front door before it finds you.\n\nLeft side: move · Right side: look\nHold Sneak to stay quiet · Hold Run to move fast and loud"
+                android:text="Something else lives here now. Find all five brass keys, feed them into the front door one at a time, then step outside.\n\nLeft side: move · Right side: look\nTap the hand icon at a door to open or close it · Hold Sneak/Run to change pace\nPress Hide near a bed or desk to crouch underneath and disappear"
                 android:textColor="#D8CFB8"
                 android:textSize="14sp"
                 android:shadowColor="#000000"
